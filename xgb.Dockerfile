@@ -3,7 +3,7 @@ LABEL maintainer="Sanghoon(Kevin) Jeon <kppw99@gmail.com>"
 
 
 # Install library
-RUN pip3 install scikit-learn, cmake, wheel, xgboost
+RUN pip3 install scikit-learn cmake wheel xgboost
 
 
 # Update github of wDIAL
