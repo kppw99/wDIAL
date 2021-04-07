@@ -48,7 +48,4 @@ WORKDIR /w_dial/source/
 RUN python3 -c "from preprocessing import *; get_train_dataset(save='/data/train.csv')" 
 RUN python3 -c "from preprocessing import *; get_test_dataset(save='/data/test.csv')" 
 
-WORKDIR /w_dial/source/
-RUN python3 -c "from svm import *; do_svm('/data/train.csv', '/data/test.csv')"
-
 # docker build -t base/wdial:latest . -f Dockerfile
