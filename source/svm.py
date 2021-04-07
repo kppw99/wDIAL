@@ -16,9 +16,8 @@ def _svm(tr_X, tr_y, te_X, te_y):
 
 def do_SVM(tr_file, te_file) -> None:
     tr_X, te_X, tr_y, te_y = load_data(tr_file, te_file)
-    _svm(tr_X, tr_y, te_X, te_y)
+    svm(tr_X, tr_y, te_X, te_y)
 
 
 if __name__=='__main__':
     None
-

@@ -193,9 +193,61 @@ def load_data(tr_file, te_file, label_encoder=False):
     return tr_X, te_X, tr_y, te_y
 
 
+def make_initial_dataset(tr_trip=4):
+    """ DataFrame 형태의 train_dataset, test_dataset 그리고 각 Driver별 queque로 구성된 remain_Q를 구성한다.
+
+        Args:
+            tr_trip: 0 ~ 8 -> 초기 train data로 사용할 trip cnt
+
+        Returns:
+            train_data, test_data, remain_Q
+        """
+    tr_df = get_train_dataset(trip=tr_trip)
+    te_df = get_test_dataset()
+    remain_Q = _get_remain_dataset(s_trip=(9-tr_trip))
+
+    return tr_df, te_df, remain_Q
+
+
+def get_remain_set_size(remain_Q):
+    rs_size = 0
+    for driver in range(0,len(remain_Q)):
+        rs_size = rs_size + len(remain_Q[driver])
+    return rs_size
+
+
+def split_label(df, label_encoder=False):
+    df_X = df.iloc[:, 0:1092];
+    df_y = df['Driver']
+
+    if label_encoder is True: df_y = _encoding_label(df_y)
+
+    del df
+    return df_X, df_y
+
+
 ############################################
 # Local Functions of preprocessing
 ############################################
+
+
+def _get_remain_dataset(s_trip):
+    print('[#] get remain_Q ...')
+    remain_Q = list()
+    qa = list(); qb = list(); qf = list(); qg = list(); qi = list()
+    e_trip = 9
+    for cnt in range(s_trip,e_trip):
+        qa.append(get_driver_dataset('A', cnt))
+        qb.append(get_driver_dataset('B', cnt))
+        qf.append(get_driver_dataset('F', cnt))
+        qg.append(get_driver_dataset('G', cnt))
+        qi.append(get_driver_dataset('I', cnt))
+    remain_Q.append(qa)
+    remain_Q.append(qb)
+    remain_Q.append(qf)
+    remain_Q.append(qg)
+    remain_Q.append(qi)
+    return remain_Q
 
 
 def _get_file_name(driver, trip) -> str:
@@ -241,11 +293,14 @@ def _save_csv_from_hdf5(path, trip_cnt=None):
     df.to_csv(file_name, index=False)
 
 
-def _encoding_label(tr_df, te_df):
+def _encoding_label(tr_df, te_df=None):
     train = tr_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
-    test = te_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
-    del tr_df; del te_df
-    return train, test
+    if te_df is not None:
+        test = te_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
+        del tr_df; del te_df
+        return train, test
+    del tr_df
+    return train
 
 
 if __name__=='__main__':
