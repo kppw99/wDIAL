@@ -3,7 +3,7 @@ LABEL maintainer="Sanghoon(Kevin) Jeon <kppw99@gmail.com>"
 
 
 # Install library
-RUN pip3 install scikit-learn
+RUN pip3 install scikit-learn, cmake, wheel, xgboost
 
 
 # Update github of wDIAL
@@ -13,6 +13,6 @@ RUN git pull origin main
 
 # do_svm()
 WORKDIR /w_dial/source/
-RUN python3 -c "from svm import *; do_SVM('/data/train.csv', '/data/test.csv')"
+RUN python3 -c "from xgb import *; do_XGBoost('/data/train.csv', '/data/test.csv')"
 
-# docker build -t svm/wdial:latest . -f svm.Dockerfile
+# docker build -t xgb/wdial:latest . -f xgb.Dockerfile

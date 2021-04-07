@@ -13,6 +13,6 @@ RUN git pull origin main
 
 # do_svm()
 WORKDIR /w_dial/source/
-RUN python3 -c "from svm import *; do_SVM('/data/train.csv', '/data/test.csv')"
+RUN python3 -c "from random_forest import *; do_RF('/data/train.csv', '/data/test.csv')"
 
-# docker build -t svm/wdial:latest . -f svm.Dockerfile
+# docker build -t rf/wdial:latest . -f rf.Dockerfile

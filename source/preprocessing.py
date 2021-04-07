@@ -166,12 +166,13 @@ def hdf5_to_csv(save=True) -> None:
         _save_csv_from_hdf5(driver, trip_cnt=None)
 
 
-def load_data(tr_file, te_file):
+def load_data(tr_file, te_file, label_encoder=False):
     """각 Driver의 trip data까지의 data를 모아서 Train dataset을 구성한다.
 
         Args:
             trip: 0 ~ 8
             save: None (default) or filename -> dataset을 csv 파일로 저장한다.
+            label_encoder: True or False (default) -> label을 encoding한다.
 
         Returns:
             train_data, train_label, test_data, test_label
@@ -182,8 +183,11 @@ def load_data(tr_file, te_file):
 
     tr_X = tr_df.iloc[:, 0:1092];
     tr_y = tr_df['Driver']
+
     te_X = te_df.iloc[:, 0:1092];
     te_y = te_df['Driver']
+
+    if label_encoder is True: tr_y, te_y = _encoding_label(tr_y, te_y)
 
     del tr_df; del te_df
     return tr_X, te_X, tr_y, te_y
@@ -235,6 +239,13 @@ def _save_csv_from_hdf5(path, trip_cnt=None):
     file_name = file_name + '.csv'
     print('[*] Save csv file: ', file_name)
     df.to_csv(file_name, index=False)
+
+
+def _encoding_label(tr_df, te_df):
+    train = tr_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
+    test = te_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
+    del tr_df; del te_df
+    return train, test
 
 
 if __name__=='__main__':
