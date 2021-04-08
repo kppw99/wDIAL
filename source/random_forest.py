@@ -20,4 +20,4 @@ def do_RF(tr_file, te_file) -> None:
 
 
 if __name__=='__main__':
-    do_RF('../data/ABFGI_train.csv', '../data/ABFGI_test.arff.csv')
+    do_RF('../data/all/ABFGI_train.csv', '../data/all/ABFGI_test.arff.csv')
