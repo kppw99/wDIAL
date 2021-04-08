@@ -22,4 +22,4 @@ def do_XGBoost(tr_file, te_file) -> None:
 
 
 if __name__=='__main__':
-    None
+    do_XGBoost('../data/ABFGI_train.csv', '../data/ABFGI_test.arff.csv')

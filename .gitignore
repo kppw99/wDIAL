@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# large dataset
+data/all/
+
+# ignore .idea
+.idea
