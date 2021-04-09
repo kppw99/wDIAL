@@ -166,7 +166,7 @@ def hdf5_to_csv(save=True) -> None:
         _save_csv_from_hdf5(driver, trip_cnt=None)
 
 
-def load_data(tr_file, te_file, label_encoder=False):
+def load_data(tr_file, te_file, label_encoder=False, drop=[]):
     """각 Driver의 trip data까지의 data를 모아서 Train dataset을 구성한다.
 
         Args:
@@ -181,8 +181,9 @@ def load_data(tr_file, te_file, label_encoder=False):
     tr_df = get_dataset(tr_file)
     te_df = get_dataset(te_file)
 
-    # tr_df.drop(tr_df.loc[tr_df['Driver'] == 'A'].index, inplace=True)
-    # te_df.drop(te_df.loc[te_df['Driver'] == 'A'].index, inplace=True)
+    for driver in drop:
+        tr_df.drop(tr_df.loc[tr_df['Driver'] == driver].index, inplace=True)
+        te_df.drop(te_df.loc[te_df['Driver'] == driver].index, inplace=True)
 
     tr_X = tr_df.iloc[:, 0:1092];
     tr_y = tr_df['Driver']
@@ -190,7 +191,7 @@ def load_data(tr_file, te_file, label_encoder=False):
     te_X = te_df.iloc[:, 0:1092];
     te_y = te_df['Driver']
 
-    if label_encoder is True: tr_y, te_y = _encoding_label(tr_y, te_y)
+    if label_encoder is True: tr_y, te_y = _encoding_label(tr_y, te_y, drop)
 
     del tr_df; del te_df
     return tr_X, te_X, tr_y, te_y
@@ -207,7 +208,7 @@ def make_initial_dataset(tr_trip=4):
         """
     tr_df = get_train_dataset(trip=tr_trip)
     te_df = get_test_dataset()
-    remain_Q = _get_remain_dataset(s_trip=(9-tr_trip))
+    remain_Q = _get_remain_dataset(s_trip=(9 - tr_trip))
 
     return tr_df, te_df, remain_Q
 
@@ -296,10 +297,14 @@ def _save_csv_from_hdf5(path, trip_cnt=None):
     df.to_csv(file_name, index=False)
 
 
-def _encoding_label(tr_df, te_df=None):
-    train = tr_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
+def _encoding_label(tr_df, te_df=None, drop=[]):
+    driver_list = ['A', 'B', 'F', 'G', 'I']
+    for driver in drop:
+        driver_list.remove(driver)
+    dict = {string: i for i, string in enumerate(driver_list)}
+    train = tr_df.replace(dict)
     if te_df is not None:
-        test = te_df.replace({'A':0, 'B':1, 'F':2, 'G':3, 'I':4})
+        test = te_df.replace(dict)
         del tr_df; del te_df
         return train, test
     del tr_df

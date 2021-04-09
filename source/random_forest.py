@@ -5,7 +5,7 @@ from sklearn.metrics import classification_report
 from sklearn.ensemble import RandomForestClassifier
 
 
-def _random_forest(tr_X, tr_y, te_X, te_y):
+def random_forest(tr_X, tr_y, te_X, te_y):
     print('[#] Start RandomForest Classifier')
     forest = RandomForestClassifier(n_estimators=100, verbose=1)
     forest.fit(tr_X, tr_y)
@@ -16,7 +16,7 @@ def _random_forest(tr_X, tr_y, te_X, te_y):
 
 def do_RF(tr_file, te_file) -> None:
     tr_X, te_X, tr_y, te_y = load_data(tr_file, te_file)
-    _random_forest(tr_X, tr_y, te_X, te_y)
+    random_forest(tr_X, tr_y, te_X, te_y)
 
 
 if __name__=='__main__':

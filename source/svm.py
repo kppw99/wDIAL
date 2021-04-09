@@ -5,7 +5,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import classification_report
 
 
-def _svm(tr_X, tr_y, te_X, te_y):
+def svm(tr_X, tr_y, te_X, te_y):
     print('[#] Start SVM Classifier')
     svc = SVC(kernel='poly', C=1.0, verbose=1)
     svc.fit(tr_X, tr_y)
@@ -16,7 +16,7 @@ def _svm(tr_X, tr_y, te_X, te_y):
 
 def do_SVM(tr_file, te_file) -> None:
     tr_X, te_X, tr_y, te_y = load_data(tr_file, te_file)
-    _svm(tr_X, tr_y, te_X, te_y)
+    svm(tr_X, tr_y, te_X, te_y)
 
 
 if __name__=='__main__':
