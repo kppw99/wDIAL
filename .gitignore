@@ -133,3 +133,6 @@ data/all/
 
 # ignore .idea
 .idea
+
+# ignore test.ipynb
+test.ipynb

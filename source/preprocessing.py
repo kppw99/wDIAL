@@ -181,6 +181,9 @@ def load_data(tr_file, te_file, label_encoder=False):
     tr_df = get_dataset(tr_file)
     te_df = get_dataset(te_file)
 
+    # tr_df.drop(tr_df.loc[tr_df['Driver'] == 'A'].index, inplace=True)
+    # te_df.drop(te_df.loc[te_df['Driver'] == 'A'].index, inplace=True)
+
     tr_X = tr_df.iloc[:, 0:1092];
     tr_y = tr_df['Driver']
 
