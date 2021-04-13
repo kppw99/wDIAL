@@ -9,7 +9,7 @@ from source.models import *
 # DATASET CONFIGURATIONS
 ############################################
 
-
+MODEL = 'svm'   # 'svm' or 'mlp'
 do_record = False # Neptune 이라는 ML Logging tool을 이용할 때만 True로 사용합니다
 
 train_path = '../data/train_dataset/'
@@ -104,13 +104,25 @@ for mode in ['distance', 'random']:   # 'random' and 'distance'
                 print(' -> Start Calculating Distances..')
                 for pool_key in pool_keys:
                     pool_selected_data = pool_merged[pool_key]
-                    pool_distance = calculate_distance(model, pool_selected_data)
+                    if MODEL == 'svm':
+                        pool_distance = calculate_distance(model, pool_selected_data)
+                    elif MODEL == 'mlp':
+                        pool_distance = calculate_entropy(model, pool_selected_data)
+                    else:
+                        print('Please use proper MODEL!')
+                        exit(1)
                     pool_dist_dict[pool_key] = pool_distance
 
-        #             print(pool_key, ' : ', pool_distance)
+                    # print(pool_key, ' : ', pool_distance)
 
                 # pool_cnt 개수만큼 데이터를 추출해둠 (거리가 먼 것 부터 선택)
-                selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
+                if MODEL == 'svm':
+                    selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
+                elif MODEL == 'mlp':
+                    selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=False)[:pool_cnt]
+                else:
+                    print('Please use proper MODEL!')
+                    exit(1)
                 selected_keys = [i[0] for i in selected_pool]
 
             # Training Set에 총 몇 개의 데이터가 들어갔는지 확인
@@ -127,7 +139,13 @@ for mode in ['distance', 'random']:   # 'random' and 'distance'
             # 이미 선택된 Data 들은 삭제시킴
             [pool_merged.pop(selected_key) for selected_key in selected_keys]
 
-        model, acc, prec, rec, f1 = svm(train_x, train_y, test_x, test_y)
+        if MODEL == 'svm':
+            model, acc, prec, rec, f1 = svm(train_x, train_y, test_x, test_y)
+        elif MODEL == 'mlp':
+            model, acc, prec, rec, f1 = mlp(train_x, train_y, test_x, test_y)
+        else:
+            print('Please use proper MODEL!')
+            exit(1)
         acc_list.append(acc)
         prec_list.append(prec)
         rec_list.append(rec)
