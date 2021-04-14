@@ -136,3 +136,5 @@ data/all/
 
 # ignore test.ipynb
 test.ipynb
+
+*.pkl
