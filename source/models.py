@@ -1,11 +1,13 @@
 import numpy as np
 
+from scipy.stats import entropy
+
 from sklearn import metrics
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report
 from sklearn.metrics import precision_recall_fscore_support
 
-from keras.optimizers import Adam
+from keras.optimizers import Adamax
 from keras.models import Sequential
 from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
@@ -21,37 +23,35 @@ EPOCHS = 100
 
 def mlp(tr_X, tr_y, te_X, te_y):
     print('[#] Start MLP Classifier')
+    def _base_model():
+        model = Sequential()
+        model.add(Dense(512, input_dim=tr_X.shape[1], kernel_initializer='he_normal'))
+        model.add(BatchNormalization())
+        model.add(Activation('relu'))
+        model.add(Dense(64))
+        model.add(BatchNormalization())
+        model.add(Activation('relu'))
+        model.add(Dense(CLASS_NUM, activation='softmax'))
 
-    tr_y = to_categorical(tr_y, CLASS_NUM)
-    te_y = to_categorical(te_y, CLASS_NUM)
+        model.compile(loss='sparse_categorical_crossentropy',
+                      optimizer=Adamax(lr=0.001), metrics=['accuracy'])
+        model.summary()
+        return model
 
-    model = Sequential()
-    model.add(Dense(512, input_dim=tr_X.shape[1], kernel_initializer='he_normal'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dense(64))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dense(CLASS_NUM, activation='softmax'))
+    model = _base_model()
+    early_stopping = EarlyStopping(monitor='loss', min_delta=0.01, patience=10)
+    model.fit(tr_X, tr_y, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1,
+              shuffle=True, callbacks=[early_stopping])
 
-    adam = Adam(lr=0.001)
-    model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
-    # model.summary()
-
-    early_stopping = EarlyStopping(monitor='loss', patience=10)
-    model.fit(tr_X, tr_y, validation_split=0.2, batch_size=BATCH_SIZE, epochs=EPOCHS,
-              verbose=0, shuffle=False, callbacks=[early_stopping])
-
-    pred_y = np.argmax(model.predict(te_X, batch_size=BATCH_SIZE), axis=1)
-    te_y = np.argmax(te_y, axis=1)
+    pred_y = np.argmax(model.predict(te_X), axis=1)
     report = classification_report(te_y, pred_y)
+
+    print(report)
 
     print('[-] te_y distribution:', list(te_y).count(0), list(te_y).count(1),
           list(te_y).count(2), list(te_y).count(3))
     print('[-] pred_y distribution:', list(pred_y).count(0), list(pred_y).count(1),
           list(pred_y).count(2), list(pred_y).count(3))
-
-    print(report)
 
     prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
 
@@ -65,11 +65,8 @@ def mlp(tr_X, tr_y, te_X, te_y):
 
 
 def calculate_entropy(model, data):
-    def _entropy(x):
-        x = np.array(x)
-        return -np.sum(x * np.log2(x))
     y = model.predict(data, batch_size=BATCH_SIZE)
-    entropys = np.array([_entropy(item) for item in y])
+    entropys = np.array([entropy(item, base=2) for item in y])
     return entropys.mean()
 
 
