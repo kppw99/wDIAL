@@ -134,7 +134,7 @@ data/all/
 # ignore .idea
 .idea
 
-# ignore test.ipynb
-test.ipynb
+# ignore .ipynb files
+*.ipynb
 
 *.pkl

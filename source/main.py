@@ -47,24 +47,25 @@ f1_list = list()
 train_set_config_list = list()
 
 pool_cnt = 4 # 한 번에 몇 datapoint씩 파싱할 것인지 선택
-train_set_configs = {
-    'B': 1,
-    'F': 1,
-    'G': 1,
-    'I': 1
-}
 
-pool_keys = list(pool_B.keys()) + list(pool_F.keys()) + list(pool_G.keys()) + list(pool_I.keys())
-pool_keys = np.asarray(pool_keys)
+for mode in ['distance','random']:   # 'random' and 'distance'
+    train_set_configs = {
+        'B': 1,
+        'F': 1,
+        'G': 1,
+        'I': 1
+    }
 
-pool_merged = {**pool_B, **pool_F, **pool_G, **pool_I}
+    pool_keys = list(pool_B.keys()) + list(pool_F.keys()) + list(pool_G.keys()) + list(pool_I.keys())
+    pool_keys = np.asarray(pool_keys)
 
-print(len(pool_keys))
-print(len(pool_merged))
+    pool_merged = {**pool_B, **pool_F, **pool_G, **pool_I}
 
-for mode in ['distance', 'random']:   # 'random' and 'distance'
+    print(len(pool_keys))
+    print(len(pool_merged))
+
     # pool에 남아있는 개수 / 한 번에 몇개씩 pool에서 뽑을지?
-    for iteration_idx in range(int(len(pool_keys)/pool_cnt)):
+    for iteration_idx in range(int(len(pool_keys)/pool_cnt) + 1):
         print('-------------------------------------------------')
         print('[#] Phase ', iteration_idx)
         print('-------------------------------------------------')

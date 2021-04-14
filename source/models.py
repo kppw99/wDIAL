@@ -9,7 +9,7 @@ from keras.optimizers import Adam
 from keras.models import Sequential
 from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
-from keras.layers import Activation, Dense
+from keras.layers import Activation, Dense, BatchNormalization
 
 from helpers import driver_dict
 
@@ -26,9 +26,11 @@ def mlp(tr_X, tr_y, te_X, te_y):
     te_y = to_categorical(te_y, CLASS_NUM)
 
     model = Sequential()
-    model.add(Dense(512, input_dim=tr_X.shape[1]))
+    model.add(Dense(512, input_dim=tr_X.shape[1], kernel_initializer='he_normal'))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dense(64))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dense(CLASS_NUM, activation='softmax'))
 
@@ -44,13 +46,10 @@ def mlp(tr_X, tr_y, te_X, te_y):
     te_y = np.argmax(te_y, axis=1)
     report = classification_report(te_y, pred_y)
 
-    print('pred_y distribution')
-    print(list(pred_y).count(0), list(pred_y).count(1),
-          list(pred_y).count(2), list(pred_y).count(3))
-
-    print('te_y distribution')
-    print(list(te_y).count(0), list(te_y).count(1),
+    print('[-] te_y distribution:', list(te_y).count(0), list(te_y).count(1),
           list(te_y).count(2), list(te_y).count(3))
+    print('[-] pred_y distribution:', list(pred_y).count(0), list(pred_y).count(1),
+          list(pred_y).count(2), list(pred_y).count(3))
 
     print(report)
 
