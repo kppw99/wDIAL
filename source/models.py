@@ -4,8 +4,8 @@ from scipy.stats import entropy
 
 from sklearn import metrics
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, precision_recall_fscore_support, roc_auc_score
 
 from keras.optimizers import Adamax
 from keras.models import Sequential
@@ -45,18 +45,15 @@ def mlp(tr_X, tr_y, te_X, te_y):
 
     pred_y = np.argmax(model.predict(te_X), axis=1)
     report = classification_report(te_y, pred_y)
+    prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
+    acc = metrics.accuracy_score(te_y, pred_y)
 
     print(report)
-
     print('[-] te_y distribution:', list(te_y).count(0), list(te_y).count(1),
           list(te_y).count(2), list(te_y).count(3))
     print('[-] pred_y distribution:', list(pred_y).count(0), list(pred_y).count(1),
           list(pred_y).count(2), list(pred_y).count(3))
-
-    prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
-
-    acc = metrics.accuracy_score(te_y, pred_y)
-    print('[*] Accuracy (SVM): ', acc)
+    print('[*] Accuracy (MLP): ', acc)
     print('[*] Precision: ', prec)
     print('[*] Recall: ', rec)
     print('[*] F1 Score: ', f1)
@@ -77,11 +74,10 @@ def svm(tr_X, tr_y, te_X, te_y):
     pred_y = svc.predict(te_X)
     
     report = classification_report(te_y, pred_y)
-    print(report)
-    
     prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
-    
     acc = metrics.accuracy_score(te_y, pred_y)
+
+    print(report)
     print('[*] Accuracy (SVM): ', acc)
     print('[*] Precision: ', prec)
     print('[*] Recall: ', rec)
@@ -105,3 +101,30 @@ def calculate_distance(trained_svm, pool_data):
     target_dist = min_dist.mean()
         
     return target_dist
+
+
+def random_forest(tr_X, tr_y, te_X, te_y):
+    print('[#] Start RandomForest Classifier')
+    model = RandomForestClassifier(n_jobs=-1, verbose=0)
+    model.fit(tr_X, tr_y)
+    pred_y = model.predict(te_X)
+
+    report = classification_report(te_y, pred_y)
+    prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
+    acc = metrics.accuracy_score(te_y, pred_y)
+    ras = roc_auc_score(te_y, model.predict_proba(te_X), multi_class="ovr", average='macro')
+
+    print(report)
+    print('[*] Accuracy (Random Forest): ', acc)
+    print('[*] ROC_AUC_SCORE: ', ras)
+    print('[*] Precision: ', prec)
+    print('[*] Recall: ', rec)
+    print('[*] F1 Score: ', f1)
+
+    return model, acc, prec, rec, f1
+
+
+def calculate_proba(model, data):
+    y = model.predict_proba(data)
+    entropys = np.array([entropy(item, base=2) for item in y])
+    return entropys.mean()
