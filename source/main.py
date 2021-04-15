@@ -9,8 +9,8 @@ from source.models import *
 # DATASET CONFIGURATIONS
 ############################################
 
-MODEL = 'svm'   # 'svm' or 'mlp'
-do_record = False # Neptune 이라는 ML Logging tool을 이용할 때만 True로 사용합니다
+MODEL = 'rf'  # 'svm' or 'mlp' or 'rf' (random forest)
+do_record = False  # Neptune 이라는 ML Logging tool을 이용할 때만 True로 사용합니다
 
 train_path = '../data/train_dataset/'
 test_path = '../data/test_dataset/'
@@ -46,9 +46,9 @@ rec_list = list()
 f1_list = list()
 train_set_config_list = list()
 
-pool_cnt = 4 # 한 번에 몇 datapoint씩 파싱할 것인지 선택
+pool_cnt = 4  # 한 번에 몇 datapoint씩 파싱할 것인지 선택
 
-for mode in ['distance','random']:   # 'random' and 'distance'
+for mode in ['distance']:  # 'random' and 'distance'
     train_set_configs = {
         'B': 1,
         'F': 1,
@@ -65,7 +65,7 @@ for mode in ['distance','random']:   # 'random' and 'distance'
     print(len(pool_merged))
 
     # pool에 남아있는 개수 / 한 번에 몇개씩 pool에서 뽑을지?
-    for iteration_idx in range(int(len(pool_keys)/pool_cnt) + 1):
+    for iteration_idx in range(int(len(pool_keys) / pool_cnt) + 1):
         print('-------------------------------------------------')
         print('[#] Phase ', iteration_idx)
         print('-------------------------------------------------')
@@ -74,15 +74,16 @@ for mode in ['distance','random']:   # 'random' and 'distance'
         if iteration_idx == 0:
             # init_data 들로 train set을 구성하고
             train_x = np.concatenate((init_train_B, init_train_F, init_train_G, init_train_I), axis=0)
-            train_y = np.concatenate((init_train_B_label, init_train_F_label, init_train_G_label, init_train_I_label), axis=0)
+            train_y = np.concatenate((init_train_B_label, init_train_F_label, init_train_G_label, init_train_I_label),
+                                     axis=0)
 
             if do_record:
                 neptune.init(
-                    # 'accida/sandbox',
-                    # api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiOWNlZmJkMDYtODI2Ny00NWM5LTkwZmQtYjUxMDFmM2FlYWU0In0=')
-                    'kppw99/wDIAL',
-                    api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI4NmMxZWNlNC1hYzIxLTRlMmYtODlmZi0zZjhkNzBiNjE3M2UifQ==')
-            
+                    'accida/sandbox',
+                    api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vdWkubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3VpLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiOWNlZmJkMDYtODI2Ny00NWM5LTkwZmQtYjUxMDFmM2FlYWU0In0=')
+                    # 'kppw99/wDIAL',
+                    # api_token='eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI4NmMxZWNlNC1hYzIxLTRlMmYtODlmZi0zZjhkNzBiNjE3M2UifQ==')
+
                 # 실험 생성
                 experiment_object = neptune.create_experiment(
                     name='accida_binary_kp',
@@ -109,6 +110,8 @@ for mode in ['distance','random']:   # 'random' and 'distance'
                         pool_distance = calculate_distance(model, pool_selected_data)
                     elif MODEL == 'mlp':
                         pool_distance = calculate_entropy(model, pool_selected_data)
+                    elif MODEL == 'rf':
+                        pool_distance = calculate_proba(model, pool_selected_data)
                     else:
                         print('Please use proper MODEL!')
                         exit(1)
@@ -118,8 +121,13 @@ for mode in ['distance','random']:   # 'random' and 'distance'
 
                 # pool_cnt 개수만큼 데이터를 추출해둠 (거리가 먼 것 부터 선택)
                 if MODEL == 'svm':
+                    # certainty dataset first
                     selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
                 elif MODEL == 'mlp':
+                    # uncertainty dataset first
+                    selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
+                elif MODEL == 'rf':
+                    # uncertainty dataset first (True) / certainty dataset first (False)
                     selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=False)[:pool_cnt]
                 else:
                     print('Please use proper MODEL!')
@@ -144,6 +152,8 @@ for mode in ['distance','random']:   # 'random' and 'distance'
             model, acc, prec, rec, f1 = svm(train_x, train_y, test_x, test_y)
         elif MODEL == 'mlp':
             model, acc, prec, rec, f1 = mlp(train_x, train_y, test_x, test_y)
+        elif MODEL == 'rf':
+            model, acc, prec, rec, f1 = random_forest(train_x, train_y, test_x, test_y)
         else:
             print('Please use proper MODEL!')
             exit(1)
@@ -156,19 +166,19 @@ for mode in ['distance','random']:   # 'random' and 'distance'
         print('train_x: ', train_x.shape)
         print(train_set_configs)
         print('Number of the Pool: ', len(pool_keys))
-        
+
         if do_record:
             neptune.log_metric('Accuracy', acc)
             neptune.log_metric('Precision of Class 0: ', prec[0])
             neptune.log_metric('Precision of Class 1: ', prec[1])
             neptune.log_metric('Precision of Class 2: ', prec[2])
             neptune.log_metric('Precision of Class 3: ', prec[3])
-            
+
             neptune.log_metric('Recall of Class 0: ', rec[0])
             neptune.log_metric('Recall of Class 1: ', rec[1])
             neptune.log_metric('Recall of Class 2: ', rec[2])
             neptune.log_metric('Recall of Class 3: ', rec[3])
-            
+
             neptune.log_metric('F1 Score of Class 0: ', f1[0])
             neptune.log_metric('F1 Score of Class 1: ', f1[1])
             neptune.log_metric('F1 Score of Class 2: ', f1[2])
