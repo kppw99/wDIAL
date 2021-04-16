@@ -4,7 +4,7 @@ from scipy.stats import entropy
 
 from sklearn import metrics
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.metrics import classification_report, precision_recall_fscore_support, roc_auc_score
 
 from keras.optimizers import Adamax
@@ -72,7 +72,7 @@ def svm(tr_X, tr_y, te_X, te_y):
     svc = SVC(kernel='linear', C=1.0, verbose=False)
     svc.fit(tr_X, tr_y)
     pred_y = svc.predict(te_X)
-    
+
     report = classification_report(te_y, pred_y)
     prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
     acc = metrics.accuracy_score(te_y, pred_y)
@@ -82,8 +82,32 @@ def svm(tr_X, tr_y, te_X, te_y):
     print('[*] Precision: ', prec)
     print('[*] Recall: ', rec)
     print('[*] F1 Score: ', f1)
-    
+
     return svc, acc, prec, rec, f1
+
+
+def bagging_svm(tr_X, tr_y, te_X, te_y, n_estimators):
+    print('[#] Start SVM Bagging Classifier')
+    svc = SVC(kernel='linear')
+    n_estimators = n_estimators
+    n_jobs = -1
+    verbose = 0
+    model = BaggingClassifier(base_estimator=svc, n_estimators=n_estimators,
+                              max_samples=1. / n_estimators, n_jobs=n_jobs, verbose=verbose)
+    model.fit(tr_X, tr_y)
+    pred_y = model.predict(te_X)
+
+    report = classification_report(te_y, pred_y)
+    prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
+    acc = metrics.accuracy_score(te_y, pred_y)
+
+    print(report)
+    print('[*] Accuracy (SVM): ', acc)
+    print('[*] Precision: ', prec)
+    print('[*] Recall: ', rec)
+    print('[*] F1 Score: ', f1)
+
+    return model, acc, prec, rec, f1
 
 
 def calculate_distance(trained_svm, pool_data):
@@ -94,13 +118,19 @@ def calculate_distance(trained_svm, pool_data):
 
     # 일단, datapoint가 decision boundary와의 거리를 abs() 먹여서 양수로 만든다
     abs_dist = abs(dist) # 양수로 바꿔주고
-    
+
     min_dist = abs_dist.min(axis=1) # decision boundary와의 거리들 중 최소 거리를 parsing
     # mean_dist = abs_dist.mean(axis=1)
-        
+
     target_dist = min_dist.mean()
-        
+
     return target_dist
+
+
+def calculate_bagging_distance(trained_svm, pool_data):
+    y = trained_svm.predict_proba(pool_data)
+    entropys = np.array([entropy(item, base=2) for item in y])
+    return entropys.mean()
 
 
 def random_forest(tr_X, tr_y, te_X, te_y):

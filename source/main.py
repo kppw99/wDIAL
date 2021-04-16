@@ -9,7 +9,7 @@ from source.models import *
 # DATASET CONFIGURATIONS
 ############################################
 
-MODEL = 'rf'  # 'svm' or 'mlp' or 'rf' (random forest)
+MODEL = 'bagging_svm'  # 'svm' or 'mlp' or 'rf' (random forest) or 'bagging_svm'
 do_record = False  # Neptune 이라는 ML Logging tool을 이용할 때만 True로 사용합니다
 
 train_path = '../data/train_dataset/'
@@ -19,13 +19,6 @@ print('Train: ', len(os.listdir(train_path)))
 print('Test: ', len(os.listdir(test_path)))
 
 print(os.listdir(test_path))
-
-# driver_dict = {
-#     'B': 0,
-#     'F': 1,
-#     'G': 2,
-#     'I': 3
-# }
 
 # init_train_{}, init_train_{}_label: train_x, train_y 입니다
 # pool_{}: inititial train set에 들어가지 않은 데이터들이 dict 형태로 들어가있습니다
@@ -48,7 +41,7 @@ train_set_config_list = list()
 
 pool_cnt = 4  # 한 번에 몇 datapoint씩 파싱할 것인지 선택
 
-for mode in ['distance']:  # 'random' and 'distance'
+for mode in ['distance', 'random']:  # 'random' and 'distance'
     train_set_configs = {
         'B': 1,
         'F': 1,
@@ -74,8 +67,8 @@ for mode in ['distance']:  # 'random' and 'distance'
         if iteration_idx == 0:
             # init_data 들로 train set을 구성하고
             train_x = np.concatenate((init_train_B, init_train_F, init_train_G, init_train_I), axis=0)
-            train_y = np.concatenate((init_train_B_label, init_train_F_label, init_train_G_label, init_train_I_label),
-                                     axis=0)
+            train_y = np.concatenate(
+                (init_train_B_label, init_train_F_label, init_train_G_label, init_train_I_label), axis=0)
 
             if do_record:
                 neptune.init(
@@ -108,6 +101,8 @@ for mode in ['distance']:  # 'random' and 'distance'
                     pool_selected_data = pool_merged[pool_key]
                     if MODEL == 'svm':
                         pool_distance = calculate_distance(model, pool_selected_data)
+                    elif MODEL == 'bagging_svm':
+                        pool_distance = calculate_bagging_distance(model, pool_selected_data)
                     elif MODEL == 'mlp':
                         pool_distance = calculate_entropy(model, pool_selected_data)
                     elif MODEL == 'rf':
@@ -121,10 +116,13 @@ for mode in ['distance']:  # 'random' and 'distance'
 
                 # pool_cnt 개수만큼 데이터를 추출해둠 (거리가 먼 것 부터 선택)
                 if MODEL == 'svm':
-                    # certainty dataset first
+                    # uncertainty dataset first (False) / certainty dataset first (True)
+                    selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
+                elif MODEL == 'bagging_svm':
+                    # uncertainty dataset first (True) / certainty dataset first (False)
                     selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
                 elif MODEL == 'mlp':
-                    # uncertainty dataset first
+                    # uncertainty dataset first (True) / certainty dataset first (False)
                     selected_pool = sorted(pool_dist_dict.items(), key=lambda x: x[1], reverse=True)[:pool_cnt]
                 elif MODEL == 'rf':
                     # uncertainty dataset first (True) / certainty dataset first (False)
@@ -150,6 +148,8 @@ for mode in ['distance']:  # 'random' and 'distance'
 
         if MODEL == 'svm':
             model, acc, prec, rec, f1 = svm(train_x, train_y, test_x, test_y)
+        elif MODEL == 'bagging_svm':
+            model, acc, prec, rec, f1 = bagging_svm(train_x, train_y, test_x, test_y, iteration_idx + 1)
         elif MODEL == 'mlp':
             model, acc, prec, rec, f1 = mlp(train_x, train_y, test_x, test_y)
         elif MODEL == 'rf':
