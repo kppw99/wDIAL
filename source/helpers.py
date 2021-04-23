@@ -13,7 +13,7 @@ driver_dict = {
 
 # train_path, driver 이름 (B, F, G..), index를 넣으면 해당하는 순서의 csv파일들을 읽어옵니다
 def create_driver_arrays(path, driver_name, selected_idx):
-    print('Working on ', driver_name, ' ...')
+    print('[#] Working on ', driver_name, ' ...')
     
     filenames = sorted([i for i in os.listdir(path) if driver_name in i])
     
@@ -62,7 +62,34 @@ def create_test_set(path):
         idx += 1
 
     return init_data, init_label
-    
+
+
+# test set directory path를 넣어주면, test_x, test_label을 생성 후 return 해줍니다
+def get_test_set(path, testset):
+    files = os.listdir(path)
+    filenames = list()
+    for driver in testset:
+        filename = [x for x in files if driver in x][0]
+        filenames.append([filename, driver])
+
+    idx = 0
+    for filename, driver in filenames:
+        filepath = os.path.join(path, filename)
+        data = pd.read_csv(filepath)
+
+        data = data.drop(['Driver'], axis=1).values
+        label = np.asarray([driver_dict[driver] for i in range(len(data))])
+
+        if idx == 0:
+            init_data = data
+            init_label = label
+        else:
+            init_data = np.concatenate((init_data, data), axis=0)
+            init_label = np.concatenate((init_label, label), axis=0)
+        idx += 1
+
+    return init_data, init_label
+
 
 # 기존에 있던 train_x, train_y를 parameter로 넣어주면 업데이트된 train_x, train_y를 return 해줍니다
 def build_added_train_set(pool_merged, train_x, train_y, pool_keys):

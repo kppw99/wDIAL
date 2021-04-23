@@ -13,6 +13,8 @@ from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 from keras.layers import Activation, Dense, BatchNormalization
 
+from xgboost import XGBClassifier
+
 from helpers import driver_dict
 
 
@@ -108,6 +110,26 @@ def bagging_svm(tr_X, tr_y, te_X, te_y, n_estimators):
     print('[*] F1 Score: ', f1)
 
     return model, acc, prec, rec, f1
+
+
+def xgboost(tr_X, tr_y, te_X, te_y):
+    print('[#] Start XGBoost ...')
+    xgb = XGBClassifier(objective='multi:softmax', use_label_encoder=False, n_estimators=100, eval_metric='mlogloss',
+                       n_jobs=8, verbosity=1)
+
+    pred_y = xgb.fit(tr_X, tr_y).predict(te_X)
+
+    report = classification_report(te_y, pred_y)
+    prec, rec, f1, _support = precision_recall_fscore_support(te_y, pred_y)
+    acc = metrics.accuracy_score(te_y, pred_y)
+
+    print(report)
+    print('[*] Accuracy (XGBOOST): ', acc)
+    print('[*] Precision: ', prec)
+    print('[*] Recall: ', rec)
+    print('[*] F1 Score: ', f1)
+
+    return xgb, acc, prec, rec, f1
 
 
 def calculate_distance(trained_svm, pool_data):
